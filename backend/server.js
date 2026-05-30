@@ -3,7 +3,7 @@ dotenv.config()
 
 import express from 'express'
 import cors from 'cors'
-
+import mongoose from 'mongoose'
 import connectDB from './config/db.js'
 
 import {notFound,errorHandler} from './middleware/errorMiddleware.js'
@@ -49,4 +49,16 @@ app.listen(PORT,()=>{
 })
 
 
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM received. Closing MongoDB connection...')
+  await mongoose.connection.close()
+  console.log('MongoDB connection closed. Server shutting down.')
+  process.exit(0)
+})
 
+process.on('SIGINT', async () => {
+  console.log('SIGINT received. Closing MongoDB connection...')
+  await mongoose.connection.close()
+  console.log('MongoDB connection closed. Server shutting down.')
+  process.exit(0)
+})
