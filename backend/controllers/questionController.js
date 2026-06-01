@@ -11,7 +11,7 @@
 
 import asyncHandler from 'express-async-handler'
 import Question from '../models/Question.js'
-
+import Answer from '../models/Answer.js'
 // ─────────────────────────────────────────────
 // @desc    Create a new question
 // @route   POST /api/questions
@@ -276,36 +276,6 @@ const updateQuestion = asyncHandler(async (req, res) => {
 // @route   DELETE /api/questions/:id
 // @access  Private (owner only)
 // ─────────────────────────────────────────────
-const deleteQuestion = asyncHandler(async (req, res) => {
-  const question = await Question.findById(req.params.id)
-
-  if (!question) {
-    res.status(404)
-    throw new Error('Question not found')
-  }
-
-  // ── Authorization check ─────────────────────
-  if (question.author.toString() !== req.user._id.toString()) {
-    res.status(403)
-    throw new Error('You are not authorized to delete this question')
-  }
-
-  // ── Delete the question ─────────────────────
-  // We also need to delete all answers associated
-  // with this question to avoid orphaned documents.
-  // We import Answer model for this cleanup.
-  // (imported at the top once we create the Answer model)
-  await Question.findByIdAndDelete(req.params.id)
-
-  // NOTE: Answer cleanup will be added in Step 9
-  // when we create the Answer model.
-  // For now: await Answer.deleteMany({ question: req.params.id })
-
-  res.status(200).json({
-    message: 'Question deleted successfully',
-    id: req.params.id,
-  })
-})
 
 
 // ─────────────────────────────────────────────
@@ -358,6 +328,39 @@ const voteQuestion = asyncHandler(async (req, res) => {
     voteCount: updatedQuestion.votes.length,
     hasVoted: !alreadyVoted,
     question: updatedQuestion,
+  })
+})
+
+
+
+
+
+// Update the deleteQuestion function:
+const deleteQuestion = asyncHandler(async (req, res) => {
+  const question = await Question.findById(req.params.id)
+
+  if (!question) {
+    res.status(404)
+    throw new Error('Question not found')
+  }
+
+  if (question.author.toString() !== req.user._id.toString()) {
+    res.status(403)
+    throw new Error('You are not authorized to delete this question')
+  }
+
+  // ── Delete all answers for this question ─────
+  // This prevents orphaned Answer documents in
+  // MongoDB that reference a deleted Question.
+  // Always clean up related documents on delete.
+  await Answer.deleteMany({ question: req.params.id })
+
+  // ── Then delete the question itself ──────────
+  await Question.findByIdAndDelete(req.params.id)
+
+  res.status(200).json({
+    message: 'Question and all its answers deleted successfully',
+    id: req.params.id,
   })
 })
 

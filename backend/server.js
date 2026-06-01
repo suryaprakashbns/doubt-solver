@@ -8,6 +8,7 @@ import connectDB from './config/db.js'
 import authRoutes from './routes/authRoutes.js'
 import questionRoutes from './routes/questionRoutes.js'
 import {notFound,errorHandler} from './middleware/errorMiddleware.js'
+import answerRoutes from './routes/answerRoutes.js'
 
 const app =express()
 
@@ -36,8 +37,10 @@ app.get('/',(req,res) => {
 
 app.use('/api/auth', authRoutes)
 app.use('/api/questions', questionRoutes)
+app.use('/api/answers', answerRoutes)
 app.use(notFound)
 app.use(errorHandler)
+
 
 const PORT = 3000
 
