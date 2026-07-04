@@ -22,6 +22,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext.jsx'
+import { ToastProvider } from './components/ui/Toast.jsx'
 import App from './App.jsx'
 import './index.css'
 
@@ -38,12 +39,14 @@ createRoot(document.getElementById('root')).render(
         Must be INSIDE BrowserRouter because it uses useNavigate.
       */}
       <AuthProvider>
+        <ToastProvider>
         {/*
           App: the actual application with all routes.
           Must be INSIDE AuthProvider because pages
           and components use useAuth().
         */}
         <App />
+        </ToastProvider>
       </AuthProvider>
     </BrowserRouter>
   </StrictMode>
