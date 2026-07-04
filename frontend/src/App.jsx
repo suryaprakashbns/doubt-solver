@@ -1,121 +1,83 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+// ─────────────────────────────────────────────
+// App.jsx
+//
+// The root component of the entire React app.
+// React Router lives here — it maps URL paths
+// to page components.
+//
+// HOW REACT ROUTER WORKS:
+// <Routes> looks at the current URL.
+// It finds the first <Route> whose path matches.
+// It renders that route's element.
+//
+// Nested routes: a Route inside another Route
+// shares the parent's layout. The parent renders
+// <Outlet /> where child content appears.
+//
+// path="*" is a wildcard — matches any URL that
+// nothing else matched. Used for 404 pages.
+// ─────────────────────────────────────────────
 
-function App() {
-  const [count, setCount] = useState(0)
+import { Routes, Route } from 'react-router-dom'
 
+// Layouts
+import MainLayout from './layouts/MainLayout.jsx'
+
+// Pages
+import HomePage            from './pages/HomePage.jsx'
+import LoginPage           from './pages/LoginPage.jsx'
+import RegisterPage        from './pages/RegisterPage.jsx'
+import QuestionDetailPage  from './pages/QuestionDetailPage.jsx'
+import AskQuestionPage     from './pages/AskQuestionPage.jsx'
+import ProfilePage         from './pages/ProfilePage.jsx'
+import NotFoundPage        from './pages/NotFoundPage.jsx'
+
+// Auth guard
+import ProtectedRoute from './components/common/ProtectedRoute.jsx'
+
+const App = () => {
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <Routes>
+      {
+      /* ── Routes using MainLayout ─────────────
+          All routes nested inside this Route share
+          the MainLayout (Navbar + page wrapper).
+          The index prop means this route matches
+          the parent path exactly ("/"). ──────── */
+      }
+      <Route element={<MainLayout />}>
 
-      <div className="ticks"></div>
+        {/* Public routes — anyone can visit */}
+        <Route index element={<HomePage />} />
+        <Route path="/questions/:id" element={<QuestionDetailPage />} />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+        {/* Auth routes — redirect to home if already logged in */}
+        <Route path="/login"    element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+        {/* Protected routes — redirect to login if not logged in */}
+        <Route
+          path="/ask"
+          element={
+            <ProtectedRoute>
+              <AskQuestionPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile/:id"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+
+      </Route>
+
+      {/* 404 — no layout, full screen */}
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
   )
 }
 
