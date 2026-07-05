@@ -94,12 +94,13 @@ const questionSchema = new mongoose.Schema(
     // When a new answer is posted, we push its _id here.
     // This lets us efficiently count answers and
     // populate them when needed.
-    answers: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Answer',
-      },
-    ],
+ answers: {
+  type: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Answer',
+  }],
+  default: [],
+},
 
     // ── views ──────────────────────────────────
     // Incremented each time the question detail
@@ -116,12 +117,13 @@ const questionSchema = new mongoose.Schema(
     // 1. We can prevent the same user voting twice
     // 2. We can show the user if they already voted
     // The count is always votes.length
-    votes: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-      },
-    ],
+   votes: {
+  type: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  }],
+  default: [],
+},
 
     // ── isResolved ─────────────────────────────
     // True when the question author marks an
@@ -194,12 +196,11 @@ questionSchema.index({ 'votes': -1 })
 // only the array and compute the count virtually.
 // ─────────────────────────────────────────────
 questionSchema.virtual('voteCount').get(function () {
-  return this.votes.length
+  return this.votes?.length ?? 0
 })
 
-// Virtual for answer count — same reasoning
 questionSchema.virtual('answerCount').get(function () {
-  return this.answers.length
+  return this.answers?.length ?? 0
 })
 
 const Question = mongoose.model('Question', questionSchema)

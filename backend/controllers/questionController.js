@@ -77,6 +77,9 @@ const getQuestions = asyncHandler(async (req, res) => {
   // ── Extract query parameters ────────────────
   // These come from the URL: /api/questions?search=react&page=2
   // req.query is populated by Express automatically.
+   console.log("=== getQuestions called ===");
+   console.log(req.query);
+
   const {
     search,
     tag,

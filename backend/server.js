@@ -9,6 +9,7 @@ import authRoutes from './routes/authRoutes.js'
 import questionRoutes from './routes/questionRoutes.js'
 import {notFound,errorHandler} from './middleware/errorMiddleware.js'
 import answerRoutes from './routes/answerRoutes.js'
+import userRoutes from './routes/userRoutes.js'
 
 const app =express()
 
@@ -20,24 +21,55 @@ app.use(express.urlencoded({extended:true}))
 
 
 
+// Update the CORS configuration in server.js
+// Replace the existing cors() call with:
+
 app.use(cors({
-     origin: process.env.CLIENT_URL || 'http://localhost:5173',
-     methods: ['GET','POST','PUT','DELETE','PATCH'],
-     allowedHeaders:['Content-Type','Authorization'],
-     credentials : true
+  // Allow requests from multiple origins:
+  // - Local development (Vite dev server)
+  // - Production frontend (Vercel URL)
+  // We use a function so we can check dynamically
+  origin: function (origin, callback) {
+    // Allowed origins list
+    const allowedOrigins = [
+      'http://localhost:5173',
+      'http://localhost:3000',
+      process.env.CLIENT_URL,         // your Vercel URL goes here
+    ].filter(Boolean)                  // remove undefined/null entries
+
+    // Allow requests with no origin (like Postman,
+    // Thunder Client, or server-to-server calls)
+    if (!origin) return callback(null, true)
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error(`CORS blocked: origin ${origin} not allowed`))
+    }
+  },
+  methods:      ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
 }))
 
-app.get('/',(req,res) => {
+// Already in server.js — make sure this exists:
+app.get('/', (req, res) => {
   res.json({
-    message: 'Doubt solver API is running',
+    message: 'Doubt Solver API is running',
     version: '1.0.0',
-    status: 'healthy',
+    status:  'healthy',
+    env:     process.env.NODE_ENV,
+    database: mongoose.connection.readyState === 1
+      ? 'connected'
+      : 'disconnected',
   })
 })
 
 app.use('/api/auth', authRoutes)
 app.use('/api/questions', questionRoutes)
 app.use('/api/answers', answerRoutes)
+app.use('/api/users', userRoutes)
+
 app.use(notFound)
 app.use(errorHandler)
 

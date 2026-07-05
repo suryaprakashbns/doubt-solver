@@ -103,7 +103,7 @@ answerSchema.index({ createdAt: -1 })
 // VIRTUAL: voteCount
 // ─────────────────────────────────────────────
 answerSchema.virtual('voteCount').get(function () {
-  return this.votes.length
+  return this.votes?.length??0
 })
 
 const Answer = mongoose.model('Answer', answerSchema)

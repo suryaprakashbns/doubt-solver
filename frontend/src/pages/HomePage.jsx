@@ -1,25 +1,3 @@
-// ─────────────────────────────────────────────
-// pages/HomePage.jsx
-//
-// The main feed page. Everything the user sees
-// when they first open the app.
-//
-// STATE MANAGED HERE:
-//   searchInput  — raw input value (updates instantly)
-//   debouncedSearch — delayed value (triggers API call)
-//   activeSort   — newest | votes | unanswered
-//   activeTag    — currently filtered tag (or null)
-//   page         — current pagination page
-//   questions    — fetched question array
-//   pagination   — total pages etc.
-//
-// DATA FLOW:
-// User types → searchInput updates → 400ms passes →
-// debouncedSearch updates → useEffect fires →
-// API called with { search, sort, tag, page } →
-// questions state updates → QuestionCards re-render
-// ─────────────────────────────────────────────
-
 import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import questionService from '../services/questionService.js'
@@ -28,13 +6,11 @@ import useDebounce from '../hooks/useDebounce.js'
 import QuestionCard from '../components/questions/QuestionCard.jsx'
 import SearchBar from '../components/common/SearchBar.jsx'
 import TagBadge from '../components/ui/TagBadge.jsx'
-import Avatar from '../components/ui/Avatar.jsx'
 import { QuestionCardSkeleton } from '../components/ui/Skeleton.jsx'
+import useQueryParams from '../hooks/useQueryParams.js'
 
-// ── SIDEBAR DATA ─────────────────────────────
-// In a full app these would come from API endpoints.
-// For now we hardcode them — we can replace with
-// real API calls in a future iteration.
+// ── These constants are fine outside the component ──
+// They are plain data, not hooks
 const HOT_TAGS = [
   { name: 'javascript', count: 312 },
   { name: 'react',      count: 241 },
@@ -44,7 +20,6 @@ const HOT_TAGS = [
   { name: 'express',    count:  98 },
 ]
 
-// ── FILTER TABS CONFIG ───────────────────────
 const SORT_TABS = [
   { key: 'newest',     label: 'Newest'     },
   { key: 'votes',      label: 'Most voted' },
@@ -57,28 +32,25 @@ const SORT_TABS = [
 const HomePage = () => {
   const { isAuth, user } = useAuth()
 
-  // ── Filter state ─────────────────────────────
-  const [searchInput,     setSearchInput]     = useState('')
-  const [activeSort,      setActiveSort]      = useState('newest')
-  const [activeTag,       setActiveTag]       = useState('')
-  const [page,            setPage]            = useState(1)
+  // ✅ Hook called INSIDE the component — correct
+  const { getParam, setParam } = useQueryParams()
+
+  // ✅ These use the hook result — also inside component
+  const searchInput = getParam('search', '')
+  const activeSort  = getParam('sort', 'newest')
+  const activeTag   = getParam('tag', '')
+  const page        = parseInt(getParam('page', '1'))
 
   // ── Data state ───────────────────────────────
-  const [questions,       setQuestions]       = useState([])
-  const [pagination,      setPagination]      = useState(null)
-  const [loading,         setLoading]         = useState(true)
-  const [error,           setError]           = useState(null)
+  const [questions,  setQuestions]  = useState([])
+  const [pagination, setPagination] = useState(null)
+  const [loading,    setLoading]    = useState(true)
+  const [error,      setError]      = useState(null)
 
   // ── Debounce search input ─────────────────────
-  // debouncedSearch only updates 400ms after the
-  // user stops typing. This is what we send to the API.
   const debouncedSearch = useDebounce(searchInput, 400)
 
   // ── Fetch questions ───────────────────────────
-  // useCallback memoizes fetchQuestions so it doesn't
-  // get recreated on every render — only when its
-  // dependencies change. This is important because
-  // it's in the useEffect dependency array below.
   const fetchQuestions = useCallback(async () => {
     try {
       setLoading(true)
@@ -110,22 +82,21 @@ const HomePage = () => {
     fetchQuestions()
   }, [fetchQuestions])
 
-  // Reset to page 1 when search or filters change
-  // (we don't want to be on page 3 after changing the sort)
-  useEffect(() => {
-    setPage(1)
-  }, [debouncedSearch, activeSort, activeTag])
-
   // ── Handlers ─────────────────────────────────
+  const handleSearch = (value) => {
+    setParam('search', value)
+  }
+
   const handleTagClick = (tag) => {
-    // Toggle tag filter: click same tag to clear it
-    setActiveTag(prev => prev === tag ? '' : tag)
-    setPage(1)
+    setParam('tag', activeTag === tag ? '' : tag)
   }
 
   const handleSortChange = (sort) => {
-    setActiveSort(sort)
-    setPage(1)
+    setParam('sort', sort)
+  }
+
+  const handleClearTag = () => {
+    setParam('tag', '')
   }
 
   // ─────────────────────────────────────────────
@@ -138,12 +109,10 @@ const HomePage = () => {
       <div className="bg-white border-b border-gray-100">
         <div className="max-w-5xl mx-auto px-4 py-10 text-center">
 
-          {/* Badge */}
           <div className="inline-flex items-center gap-1.5 bg-purple-50 text-purple-600 text-xs font-medium px-3 py-1 rounded-full mb-4 border border-purple-100">
             <span>⚡</span> For college students
           </div>
 
-          {/* Headline */}
           <h1 className="text-3xl font-medium text-gray-900 leading-tight mb-3">
             Ask doubts. Get answers.
             <br />
@@ -154,13 +123,11 @@ const HomePage = () => {
             A knowledge-sharing platform built for your college community.
           </p>
 
-          {/* Search bar */}
           <SearchBar
-            onSearch={setSearchInput}
+            onSearch={handleSearch}
             initialValue={searchInput}
           />
 
-          {/* Platform stats */}
           <div className="flex justify-center gap-8 mt-8">
             {[
               { value: pagination?.totalQuestions ?? '—', label: 'Questions' },
@@ -188,7 +155,6 @@ const HomePage = () => {
           {/* ── LEFT: Question feed ─────────── */}
           <div className="flex-1 min-w-0">
 
-            {/* Feed header: title + filter tabs */}
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-medium text-gray-900">
                 {activeTag
@@ -199,10 +165,9 @@ const HomePage = () => {
                 }
               </h2>
 
-              {/* Clear active tag */}
               {activeTag && (
                 <button
-                  onClick={() => setActiveTag('')}
+                  onClick={handleClearTag}
                   className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1"
                 >
                   ✕ Clear filter
@@ -230,15 +195,12 @@ const HomePage = () => {
               ))}
             </div>
 
-            {/* ── Question list ────────────── */}
+            {/* Question list */}
             {loading ? (
-              // Skeleton loading state — 5 placeholder cards
               Array.from({ length: 5 }).map((_, i) => (
                 <QuestionCardSkeleton key={i} />
               ))
-
             ) : error ? (
-              // Error state
               <div className="bg-red-50 border border-red-100 rounded-2xl p-8 text-center">
                 <div className="text-3xl mb-3">⚠</div>
                 <p className="text-sm text-red-600 mb-4">{error}</p>
@@ -249,9 +211,7 @@ const HomePage = () => {
                   Try again
                 </button>
               </div>
-
             ) : questions.length === 0 ? (
-              // Empty state
               <div className="bg-white border border-gray-100 rounded-2xl p-12 text-center">
                 <div className="text-5xl mb-4">🤔</div>
                 <h3 className="text-base font-medium text-gray-900 mb-2">
@@ -274,9 +234,7 @@ const HomePage = () => {
                   </Link>
                 )}
               </div>
-
             ) : (
-              // Questions list
               <>
                 {questions.map(question => (
                   <QuestionCard
@@ -289,75 +247,64 @@ const HomePage = () => {
                 {/* Pagination */}
                 {pagination && pagination.totalPages > 1 && (
                   <div className="flex items-center justify-center gap-2 mt-6">
-
                     <button
-                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      onClick={() => setParam('page', String(Math.max(1, page - 1)))}
                       disabled={!pagination.hasPrevPage}
                       className="text-xs px-3 py-1.5 border border-gray-200 rounded-lg text-gray-500 hover:border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                     >
                       ← Previous
                     </button>
 
-                    {/* Page number buttons */}
-                    {Array.from(
-                      { length: pagination.totalPages },
-                      (_, i) => i + 1
-                    )
-                    // Only show pages near current page to avoid clutter
-                    .filter(p =>
-                      p === 1 ||
-                      p === pagination.totalPages ||
-                      Math.abs(p - page) <= 1
-                    )
-                    .reduce((acc, p, idx, arr) => {
-                      // Add "..." between non-consecutive pages
-                      if (idx > 0 && p - arr[idx - 1] > 1) {
-                        acc.push('...')
-                      }
-                      acc.push(p)
-                      return acc
-                    }, [])
-                    .map((p, idx) =>
-                      p === '...' ? (
-                        <span key={`ellipsis-${idx}`} className="text-xs text-gray-300 px-1">
-                          ...
-                        </span>
-                      ) : (
-                        <button
-                          key={p}
-                          onClick={() => setPage(p)}
-                          className={`
-                            text-xs w-8 h-8 rounded-lg border transition-colors
-                            ${page === p
-                              ? 'bg-purple-600 text-white border-purple-600'
-                              : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
-                            }
-                          `}
-                        >
-                          {p}
-                        </button>
+                    {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+                      .filter(p =>
+                        p === 1 ||
+                        p === pagination.totalPages ||
+                        Math.abs(p - page) <= 1
                       )
-                    )}
+                      .reduce((acc, p, idx, arr) => {
+                        if (idx > 0 && p - arr[idx - 1] > 1) acc.push('...')
+                        acc.push(p)
+                        return acc
+                      }, [])
+                      .map((p, idx) =>
+                        p === '...' ? (
+                          <span key={`ellipsis-${idx}`} className="text-xs text-gray-300 px-1">
+                            ...
+                          </span>
+                        ) : (
+                          <button
+                            key={p}
+                            onClick={() => setParam('page', String(p))}
+                            className={`
+                              text-xs w-8 h-8 rounded-lg border transition-colors
+                              ${page === p
+                                ? 'bg-purple-600 text-white border-purple-600'
+                                : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                              }
+                            `}
+                          >
+                            {p}
+                          </button>
+                        )
+                      )
+                    }
 
                     <button
-                      onClick={() => setPage(p => p + 1)}
+                      onClick={() => setParam('page', String(page + 1))}
                       disabled={!pagination.hasNextPage}
                       className="text-xs px-3 py-1.5 border border-gray-200 rounded-lg text-gray-500 hover:border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                     >
                       Next →
                     </button>
-
                   </div>
                 )}
               </>
             )}
-
           </div>
 
           {/* ── RIGHT: Sidebar ──────────────── */}
           <div className="hidden lg:block w-56 flex-shrink-0">
 
-            {/* Ask question CTA */}
             {isAuth ? (
               <Link
                 to="/ask"
@@ -392,10 +339,7 @@ const HomePage = () => {
               </h3>
               <div className="space-y-2">
                 {HOT_TAGS.map(({ name, count }) => (
-                  <div
-                    key={name}
-                    className="flex items-center justify-between"
-                  >
+                  <div key={name} className="flex items-center justify-between">
                     <TagBadge
                       tag={name}
                       onClick={handleTagClick}
@@ -421,10 +365,8 @@ const HomePage = () => {
             </div>
 
           </div>
-
         </div>
       </div>
-
     </div>
   )
 }
