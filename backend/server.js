@@ -50,7 +50,7 @@ app.use(cors({
 }))
 
 // Handle preflight requests explicitly
-app.options('*', cors())
+
 
 // Already in server.js — make sure this exists:
 app.get('/', (req, res) => {
