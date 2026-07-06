@@ -8,6 +8,7 @@ import SearchBar from '../components/common/SearchBar.jsx'
 import TagBadge from '../components/ui/TagBadge.jsx'
 import { QuestionCardSkeleton } from '../components/ui/Skeleton.jsx'
 import useQueryParams from '../hooks/useQueryParams.js'
+import WakeUpBanner from '../components/ui/WakeUpBanner.jsx'
 
 // ── These constants are fine outside the component ──
 // They are plain data, not hooks
@@ -367,6 +368,7 @@ const HomePage = () => {
           </div>
         </div>
       </div>
+      <WakeUpBanner isLoading={loading} />
     </div>
   )
 }

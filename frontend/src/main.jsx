@@ -25,6 +25,9 @@ import { AuthProvider } from './context/AuthContext.jsx'
 import { ToastProvider } from './components/ui/Toast.jsx'
 import App from './App.jsx'
 import './index.css'
+import { startKeepAlive } from './utils/keepAlive.js'
+
+startKeepAlive()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

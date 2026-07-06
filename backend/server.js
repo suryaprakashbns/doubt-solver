@@ -25,32 +25,32 @@ app.use(express.urlencoded({extended:true}))
 // Replace the existing cors() call with:
 
 app.use(cors({
-  // Allow requests from multiple origins:
-  // - Local development (Vite dev server)
-  // - Production frontend (Vercel URL)
-  // We use a function so we can check dynamically
   origin: function (origin, callback) {
-    // Allowed origins list
+    // Allow these origins
     const allowedOrigins = [
-      'http://localhost:5173',
-      'http://localhost:3000',
-      process.env.CLIENT_URL,         // your Vercel URL goes here
-    ].filter(Boolean)                  // remove undefined/null entries
+      'https://doubt-solver-steel.vercel.app',  // your Vercel URL
+      'http://localhost:5173',                   // local dev
+      'http://localhost:3000',                   // local dev alt
+    ]
 
-    // Allow requests with no origin (like Postman,
-    // Thunder Client, or server-to-server calls)
+    // Allow requests with no origin (Postman, Render health checks)
     if (!origin) return callback(null, true)
 
     if (allowedOrigins.includes(origin)) {
       callback(null, true)
     } else {
-      callback(new Error(`CORS blocked: origin ${origin} not allowed`))
+      console.log('CORS blocked origin:', origin)
+      callback(new Error(`CORS blocked: ${origin}`))
     }
   },
   methods:      ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
+  optionsSuccessStatus: 200,
 }))
+
+// Handle preflight requests explicitly
+app.options('*', cors())
 
 // Already in server.js — make sure this exists:
 app.get('/', (req, res) => {
